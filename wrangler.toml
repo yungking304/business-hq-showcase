@@ -1,0 +1,74 @@
+name = "business-hq"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+# Keep the workers.dev hostname (Cloudflare Access + Mac agent) alongside the custom domain. Wrangler disables workers.dev when routes are set unless this is explicit.
+workers_dev = true
+preview_urls = false
+
+# Custom domain (zone jaamihasan.com must be active on this Cloudflare account).
+routes = [
+  { pattern = "hq.jaamihasan.com", custom_domain = true }
+]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "business-hq"
+database_id = "<your-d1-database-id>"
+
+# Cerulane outreach: send only from hello@cerulane.com (domain onboarded for Email Sending on 2026-10-22).
+[[send_email]]
+name = "EMAIL"
+allowed_sender_addresses = ["hello@cerulane.com"]
+
+# Content Studio clip previews uploaded by the Mac agent.
+[[r2_buckets]]
+binding = "STUDIO_MEDIA"
+bucket_name = "business-hq-studio"
+
+[triggers]
+crons = ["0 13 * * *", "0 */6 * * *", "*/10 * * * *"]  # every 10 min: posting-health alerts; the :30 run also does the hourly Studio work
+
+[vars]
+MONTHLY_BUDGET_USD = "100"
+AI_SOFT_LIMIT_USD = "30"
+AI_HARD_LIMIT_USD = "40"
+AI_MAX_USD_PER_CALL = "0.25"
+# Estimated $/million tokens used to record AI spend in the ledger; set to the published rate for ANTHROPIC_MODEL.
+AI_PRICE_IN_PER_M = "1"
+AI_PRICE_OUT_PER_M = "5"
+ANTHROPIC_MODEL = "claude-haiku-5-5"
+# Web push (phone page). Public half of the VAPID key pair; the private JWK is the VAPID_PRIVATE_JWK secret.
+VAPID_PUBLIC_KEY = "<your-vapid-public-key>"
+VAPID_SUBJECT = "https://hq.jaamihasan.com"
+IMAGE_MODEL = "gpt-image-2.5-sunburst"
+IMAGE_QUALITY = "medium"
+IMAGE_PRICE_USD = "0.05"
+# Daily throughput: concepts kept waiting for review, niches that get concepts per run, designs rendered per run.
+MAX_PENDING_CONCEPTS = "24"
+CONCEPT_NICHES_PER_RUN = "3"
+RENDERS_PER_RUN = "12"
+# Hero shots: photoreal lifestyle photos per listing, generated from the design file (images/edits) and stored in R2.
+HERO_SHOTS_PER_LISTING = "2"
+HERO_QUALITY = "high"
+HERO_PRICE_USD = "0.12"
+HERO_LISTINGS_PER_RUN = "4"
+# Catch-up run at :10 and :50 every hour (when daily research is on): renders what is waiting, photographs what is rendered
+CATCHUP_RENDERS = "4"
+CATCHUP_SHOOTS = "10"
+# Trend scout (daily 8 AM run, when daily research is on): Claude searches the web for what is selling in POD this week,
+# then each find becomes a trend drop. Cost per run ≈ SCOUT_SEARCHES × $0.01 + tokens, under the AI hard limit.
+SCOUT_DROPS = "3"
+SCOUT_CONCEPTS_PER_DROP = "2"
+SCOUT_SEARCHES = "6"
+SCOUT_COOLDOWN_DAYS = "21"
+# Optional upscaler for illustrated garment designs (set REPLICATE_API_TOKEN as a secret to enable)
+UPSCALE_MODEL = "nightmareai/real-esrgan"
+UPSCALE_SCALE = "4"
+UPSCALE_PRICE_USD = "0.01"
+TIMEZONE_LABEL = "America/Chicago"
+
+[[rules]]
+type = "Text"
+globs = ["**/*.txt"]
+fallthrough = true
